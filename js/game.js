@@ -21,6 +21,8 @@
   const hitLineEl = $(".hit-line");
   const bigWordEl = $("#big-word");
   const meaningEl = $("#word-meaning");
+  const gaugeEl = $("#reveal-gauge");
+  const gaugeBarEl = $("#reveal-gauge i");
   const judgementEl = $("#judgement");
   const hud = {
     score: $("#hud-score"), combo: $("#hud-combo"),
@@ -160,9 +162,10 @@
     const el = document.createElement("div");
     el.className = "note-word";
     const glyph = GLYPHS[st.glyphAlt++ % GLYPHS.length];
+    // リコール方式:スペルは伏せ字で始まり、意味から思い出して打つ
     el.innerHTML =
       `<span class="glyph">${glyph}</span><span class="letters">` +
-      en.split("").map((c) => `<span>${c}</span>`).join("") +
+      en.split("").map(() => `<span>·</span>`).join("") +
       `</span>`;
     const lane = [-34, -17, 0, 17, 34][Math.floor(Math.random() * 5)];
     el.style.setProperty("--lane", lane + "px");
@@ -176,6 +179,9 @@
       triad, seq,
       letterEls: [...el.querySelectorAll(".letters span")],
       width: el.offsetWidth,
+      revealed: false,
+      revealAt: null,   // ターゲットになった時点で締切りを設定
+      revealMs: Math.min(6000, 3200 + 260 * en.length),
     };
     el.style.transform = `translate(${word.x}px, calc(-50% + var(--lane)))`;
     st.words.push(word);
@@ -189,9 +195,11 @@
     state.words.forEach((w, i) => w.el.classList.toggle("target", i === 0));
     const t = target();
     if (t) {
+      if (!t.revealed && !t.revealAt) t.revealAt = performance.now() + t.revealMs;
       renderBigWord(t);
       meaningEl.textContent = t.ja;
-      setNextKey(t.en[t.typed]);
+      // 伏せている間は答えになるキーを光らせない(思い出すのが練習)
+      setNextKey(t.revealed ? t.en[t.typed] : null);
     } else {
       bigWordEl.innerHTML = `<span class="placeholder">♪ 単語を待っています…</span>`;
       meaningEl.innerHTML = "&nbsp;";
@@ -203,10 +211,28 @@
     bigWordEl.innerHTML = w.en
       .split("")
       .map((c, i) => {
-        const cls = i < w.typed ? "done" : i === w.typed ? "cur" : "";
-        return `<span class="${cls}">${c}</span>`;
+        if (i < w.typed) return `<span class="done">${c}</span>`;
+        const shown = w.revealed ? c : "·";
+        const cls = (i === w.typed ? "cur " : "") + (w.revealed ? "" : "hid");
+        return `<span class="${cls.trim()}">${shown}</span>`;
       })
       .join("");
+  }
+
+  // スペルを開示(締切り超過 or 打ち間違い)
+  function revealWord(w) {
+    if (w.revealed) return;
+    w.revealed = true;
+    w.letterEls.forEach((el, i) => {
+      if (i >= w.typed) {
+        el.textContent = w.en[i];
+        el.classList.add("flash-in");
+      }
+    });
+    if (w === target()) {
+      renderBigWord(w);
+      setNextKey(w.en[w.typed]);
+    }
   }
 
   // ── judgement popup ──
@@ -233,12 +259,13 @@
     if (!t) return;
 
     if (ch === t.en[t.typed]) {
-      // 正打:旋律を一音進める
+      // 正打:旋律を一音進める(伏せ字でも正しく打てた文字は姿を現す)
       const midi = t.seq[Math.min(t.typed, t.seq.length - 1)];
       AudioEngine.playNote(midi);
       flashKey(midi);
       pressKeyFx(ch, true);
 
+      t.letterEls[t.typed].textContent = t.en[t.typed];
       t.letterEls[t.typed].classList.add("done");
       t.typed++;
       state.typedOk++;
@@ -250,15 +277,16 @@
         completeWord(t);
       } else {
         renderBigWord(t);
-        setNextKey(t.en[t.typed]);
+        setNextKey(t.revealed ? t.en[t.typed] : null);
       }
     } else {
-      // ミスタッチ
+      // ミスタッチ:伏せ字ならスペルを開示(答え合わせ)
       AudioEngine.playError();
       pressKeyFx(ch, false);
       state.typedNg++;
       state.combo = 0;
       state.score = Math.max(0, state.score - 5);
+      revealWord(t);
       t.el.classList.remove("shake");
       void t.el.offsetWidth;
       t.el.classList.add("shake");
@@ -275,6 +303,11 @@
     const dist = Math.abs(center - hitLineEl.offsetLeft);
     let mult = 1, label = "Bravo", cls = "good";
     if (dist < 70) { mult = 2; label = "Bravissimo!"; cls = "perfect"; }
+    // 暗記ボーナス:スペルを見ずに思い出して打ちきった
+    if (!w.revealed) {
+      label = "Memoria!"; cls = "memoria";
+      st.score += 25 * w.en.length;
+    }
     st.score += Math.round(50 * mult * (1 + st.combo / 60));
 
     AudioEngine.playChord([...w.triad.map((n) => n + 12), w.triad[0] + 24]);
@@ -365,6 +398,21 @@
     for (const w of state.words) {
       w.x -= state.speed * sc * dt;
       w.el.style.transform = `translate(${w.x}px, calc(-50% + var(--lane)))`;
+    }
+
+    // リコール締切り:時間切れでスペルを開示、残り時間はゲージに表示
+    const t0 = target();
+    if (t0 && !t0.revealed && t0.revealAt) {
+      const rem = t0.revealAt - performance.now();
+      if (rem <= 0) {
+        revealWord(t0);
+        gaugeEl.classList.remove("on");
+      } else {
+        gaugeEl.classList.add("on");
+        gaugeBarEl.style.width = (rem / t0.revealMs) * 100 + "%";
+      }
+    } else {
+      gaugeEl.classList.remove("on");
     }
 
     // miss 判定(先頭のみ処理すれば十分:先頭が最も左にいる)
