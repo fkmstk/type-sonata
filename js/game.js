@@ -8,8 +8,7 @@
     hard:   { name: "上級", speed: 85,  spawnGap: 2.8, accel: 2.4, gapDecay: 0.980 },
   };
 
-  const HIT_X = 170;   // 演奏ライン
-  const FAIL_X = 30;   // ここを過ぎたらミス
+  const FAIL_X = 20;   // ここを過ぎたらミス(演奏ラインの位置はCSSから取得)
   const MAX_LIVES = 5;
 
   // ── DOM ──
@@ -19,6 +18,7 @@
     result: $("#screen-result"),
   };
   const staffEl = $("#staff");
+  const hitLineEl = $(".hit-line");
   const bigWordEl = $("#big-word");
   const meaningEl = $("#word-meaning");
   const judgementEl = $("#judgement");
@@ -124,6 +124,12 @@
         k.className = "kbd-key f-" + FINGER[ch];
         k.textContent = ch;
         if ("fj".includes(ch)) k.classList.add("homing");
+        // スマホ:タップでも入力できる
+        k.addEventListener("pointerdown", (ev) => {
+          ev.preventDefault();
+          if (!state || !state.playing) return;
+          handleChar(ch);
+        });
         rowEl.appendChild(k);
         keyEls[ch] = k;
       }
@@ -218,7 +224,11 @@
     const ch = e.key.toLowerCase();
     if (!/^[a-z]$/.test(ch)) return;
     e.preventDefault();
+    handleChar(ch);
+  }
 
+  // 物理キーとタップの両方から呼ばれる
+  function handleChar(ch) {
     const t = target();
     if (!t) return;
 
@@ -262,7 +272,7 @@
 
     // タイミング評価:演奏ライン付近で完成できたか
     const center = w.x + w.width / 2;
-    const dist = Math.abs(center - HIT_X);
+    const dist = Math.abs(center - hitLineEl.offsetLeft);
     let mult = 1, label = "Bravo", cls = "good";
     if (dist < 70) { mult = 2; label = "Bravissimo!"; cls = "perfect"; }
     st.score += Math.round(50 * mult * (1 + st.combo / 60));
@@ -350,9 +360,10 @@
       state.spawnTimer = state.spawnGap;
     }
 
-    // move
+    // move(狭い画面では譜面の横断時間が同じになるよう減速)
+    const sc = Math.min(1, Math.max(0.45, staffEl.clientWidth / 1100));
     for (const w of state.words) {
-      w.x -= state.speed * dt;
+      w.x -= state.speed * sc * dt;
       w.el.style.transform = `translate(${w.x}px, calc(-50% + var(--lane)))`;
     }
 

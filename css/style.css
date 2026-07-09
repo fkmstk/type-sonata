@@ -31,6 +31,8 @@ body {
   font-family: var(--f-serif);
   overflow: hidden;
   cursor: default;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* 質感:粒子とヴィネット */
@@ -410,6 +412,8 @@ body {
 .kbd-row.r2 { margin-left: 42px; }
 .kbd-key {
   width: 44px; height: 40px;
+  cursor: pointer;
+  user-select: none; -webkit-user-select: none;
   display: flex; align-items: center; justify-content: center;
   font-family: var(--f-mono); font-size: 16px; font-weight: 700;
   color: var(--ivory-dim);
@@ -548,3 +552,70 @@ body {
 /* scrollbar (result review) */
 .review-list::-webkit-scrollbar { width: 6px; }
 .review-list::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 3px; }
+
+/* ═══════════════ MOBILE ═══════════════ */
+.mobile-note { display: none; }
+
+@media (max-width: 640px) {
+  /* タイトル */
+  #screen-title { overflow-y: auto; }
+  .title-inner { padding: 40px 18px 50px; }
+  .title-sub { font-size: 15px; letter-spacing: 0.3em; }
+  .title-rule { margin: 24px auto 20px; }
+  .level-select { flex-direction: column; align-items: center; gap: 12px; }
+  .level-btn { width: min(320px, 88vw); padding: 16px 18px 13px; gap: 3px; }
+  .level-btn .lv-name { font-size: 22px; }
+  .how-to { margin-top: 26px; }
+  .how-to p { font-size: 12px; line-height: 1.9; }
+  .mobile-note { display: inline; color: var(--gold-soft); }
+
+  /* HUD */
+  .hud { gap: 12px 16px; padding: 8px 12px 7px; flex-wrap: wrap; }
+  .hud-label { font-size: 11px; letter-spacing: 0.1em; white-space: nowrap; }
+  .hud-value { font-size: 16px; }
+  .hud-lives { font-size: 16px; letter-spacing: 4px; }
+  #btn-quit { font-size: 11px; padding: 5px 8px; }
+
+  /* 五線譜 */
+  .staff { min-height: 130px; }
+  .staff-lines { height: 72px; background-size: auto 18px;
+    background: repeating-linear-gradient(to bottom,
+      var(--line) 0px, var(--line) 1px, transparent 1px, transparent 18px); }
+  .clef { left: 10px; font-size: 76px; }
+  .hit-line { left: 84px; }
+  .judgement { left: 40px; font-size: 21px; }
+  .note-word .letters { padding: 5px 9px; }
+  .note-word .letters span { font-size: 15px; }
+  .note-word .glyph { font-size: 15px; }
+
+  /* 現在の単語 */
+  .big-word { font-size: clamp(24px, 8.5vw, 34px); letter-spacing: 0.1em; }
+  .word-meaning { font-size: 14px; margin-top: 0; }
+
+  /* ピアノ:2オクターブ強ぶんを縮小表示 */
+  .wkey { width: 12px; height: 36px; }
+  .bkey { width: 7px; height: 22px; right: -3.5px; }
+
+  /* タップキーボード:画面幅いっぱい・指が届くサイズ */
+  .kbd-guide { padding: 8px 4px calc(10px + env(safe-area-inset-bottom)); gap: 5px; }
+  .kbd-row { gap: 4px; }
+  .kbd-row.r1 { margin-left: 10px; }
+  .kbd-row.r2 { margin-left: 30px; }
+  .kbd-key {
+    width: calc((100vw - 48px) / 10);
+    max-width: 44px;
+    height: 46px;
+    font-size: 15px;
+    border-radius: 4px;
+  }
+
+  /* リザルト */
+  .result-inner { padding: 30px 14px; }
+  .result-title { font-size: 32px; letter-spacing: 0.25em; text-indent: 0.25em; }
+  .result-rank { font-size: 16px; margin-bottom: 20px; }
+  .result-stats { flex-wrap: wrap; gap: 14px 0; }
+  .rs { flex: 1 1 30%; border-right: none; }
+  .rs-value { font-size: 21px; }
+  .result-actions { flex-direction: column; align-items: center; gap: 10px; }
+  .ghost-btn { width: min(300px, 80vw); }
+}
