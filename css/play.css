@@ -465,6 +465,23 @@ svg[data-pipi] { cursor: pointer; touch-action: manipulation; -webkit-user-selec
 .balloon .balloon-string { fill: none; stroke: #b9ad94; stroke-width: 1.6; }
 .balloon .balloon-shine { fill: #fffdf7; opacity: .55; }
 .balloon:active:not(:disabled) { transform: none; }
+/* ── Music colours: every note name has its own colour ───────────────── */
+.keyboard-key.pressed { background: var(--hit, #a9cba4); color: #fffdf7; }
+.piano-white.lit, .piano-black.lit { background: var(--hit, #edc775); }
+.staff-note.played .head, .staff-note.played .note-dot { fill: var(--c); stroke: var(--c); }
+.staff-note.played .head.hollow { fill: #fffdf6; stroke: var(--c); stroke-width: 2.4; }
+.staff-note.played .stem { stroke: var(--c); }
+.staff-note.played .solfa { fill: var(--c); }
+.pipi .pp-beak { transform-box: fill-box; transform-origin: 50% 0; }
+.solfa-pop { font-size: 22px; font-weight: 800; color: var(--c); text-shadow: 0 2px 0 #fffdf7, 0 0 6px #fffdf7; animation: solfa-rise .9s var(--soft) both; }
+@keyframes solfa-rise { 0% { opacity: 0; transform: translateY(8px) scale(.5); } 25% { opacity: 1; transform: translateY(-6px) scale(1.15); } 100% { opacity: 0; transform: translateY(-40px) scale(1); } }
+.song-staff.phrase-glow { animation: phrase-glow .9s ease-out; }
+@keyframes phrase-glow { 0% { box-shadow: 0 0 0 0 #f4c96e00; } 30% { box-shadow: 0 0 0 6px #f4c96e88, 0 0 26px #f4c96e; } 100% { box-shadow: 0 0 0 0 #f4c96e00; } }
+.drum-button { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: 86px; height: 86px; border-radius: 50%; background: radial-gradient(circle at 50% 42%, #fffaf0 0 46%, #f3e2c2 47% 52%, #e8786c 53%); box-shadow: 0 5px 0 #b9584e; color: #8a3f36; touch-action: none; }
+.drum-button .drum-face { font-size: 19px; font-weight: 900; line-height: 1; }
+.drum-button small { font-size: 8px; margin-top: 3px; color: #9a6a5f; }
+.drum-button:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px 0 #b9584e; }
+@media (max-width: 540px) { .drum-button { width: 64px; height: 64px; flex-shrink: 0; } .drum-button .drum-face { font-size: 16px; } .drum-button small { display: none; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
 body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after { animation: none !important; transition: none !important; }
 @media (max-width: 540px) { .stave-decoration { left: -13px; right: -13px; } }

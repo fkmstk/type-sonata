@@ -40,9 +40,12 @@
     { text:'fish', name:'さかな', icon:'fish' }, { text:'duck', name:'あひる', icon:'duck' },
     { text:'cake', name:'ケーキ', icon:'cake' }, { text:'tree', name:'き', icon:'tree' },
   ];
-  const INSTRUMENTS = { piano:'ピアノ', musicbox:'オルゴール', marimba:'もっきん', flute:'ふえ' };
+  const INSTRUMENTS = { piano:'ピアノ', musicbox:'オルゴール', marimba:'もっきん', flute:'ふえ', kitty:'にゃんこ' };
   const SOLFA = ['ど', 'ど', 'れ', 'れ', 'み', 'ふぁ', 'ふぁ', 'そ', 'そ', 'ら', 'ら', 'し'];
   const STAFF_STEP = 40;
+  // One colour per note name (ど れ み ふぁ そ ら し), like a children's bell set.
+  const PITCH_COLORS = ['#e8786c', '#f0a05a', '#e9bd3f', '#7fb87a', '#5fb0c7', '#8c9bd6', '#b48cc9'];
+  const ECHO_WAIT_MS = 1300;
   // Free-play groove: a soft four-bar loop (C - Am - F - G) the child plays over.
   const GROOVE_BEAT_MS = 600;
   const GROOVE = [
@@ -256,7 +259,7 @@
       : lesson === 'words' ? wordsForRound(round).map((word) => ({ ...word })) : [];
     const song = lesson === 'free' ? null : selectedSong;
     const songPos = song ? profile.songProgress[song] : 0;
-    state = { lesson, song, songPos, songStart:songPos, songCompleted:false, groove:lesson === 'free' && profile.settings.groove, grooveClock:0, grooveBeat:0, steps, index:0, typed:0, done:0, correct:0, attempts:0, elapsed:0, recovery:0, celebration:0, phase:'playing', paused:false, notes:[], earnedSticker:null, rewarded:false, streak:0, idle:0, balloonsPopped:0 };
+    state = { lesson, song, songPos, songStart:songPos, songCompleted:false, groove:lesson === 'free' && profile.settings.groove, grooveClock:0, grooveBeat:0, steps, index:0, typed:0, done:0, correct:0, attempts:0, elapsed:0, recovery:0, celebration:0, phase:'playing', paused:false, notes:[], earnedSticker:null, rewarded:false, streak:0, idle:0, balloonsPopped:0, phrase:[], quiet:0, echo:null, drums:0 };
     $('#play-title').textContent = LESSON_NAMES[lesson];
     $('#play-song').hidden = !song;
     if (song) $('#play-song-name').textContent = SONGS[song].name;
@@ -268,6 +271,7 @@
     $('#btn-keyboard').textContent = 'ぜんぶの キーを みる';
     $('#btn-keyboard').setAttribute('aria-expanded', 'false');
     $('#btn-free-finish').hidden = lesson !== 'free';
+    $('#btn-drum').hidden = lesson !== 'free';
     $('#keyboard-hint-text').textContent = lesson === 'free' ? 'どの キーでも、すきな おとを ぽんっ' : 'ひかる キーが つぎの おと';
     $('#play-overline').textContent = lesson === 'free' ? 'すきな おとで、すきなだけ' : 'ひとつずつ、じぶんの ペースで';
     $('#play-reassurance').textContent = lesson === 'free' ? '12この おとを ならすと、シールが もらえるよ。' : 'ゆっくりで だいじょうぶ。ピピも まってるよ。';
@@ -414,10 +418,12 @@
   }
   function flashKey(ch, midi) {
     document.querySelectorAll(`.keyboard-key[data-key="${ch}"]`).forEach((el) => {
+      el.style.setProperty('--hit', pitchColor(midi));
       el.classList.add('pressed');
       after(180, () => el.classList.remove('pressed'));
     });
     const piano = pianoKeys.get(midi);
+    piano?.style.setProperty('--hit', pitchColor(midi));
     if (piano) { piano.classList.add('lit'); after(350, () => piano.classList.remove('lit')); }
   }
   function motionAllowed() { return !profile.settings.reducedMotion && !reducedMotion.matches; }
@@ -554,6 +560,66 @@
     const pah = delay + Math.min(0.24, beats * BEAT_MS / 2000);
     chord.pah.forEach((tone) => AudioEngine.playNote(tone, { gain:0.045, dur:0.5, delay:pah }));
   }
+  function pitchColor(midi) { return PITCH_COLORS[[0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6][midi % 12]]; }
+  function sing(midi, anchor, offset = {}, pipis = document.querySelectorAll('.coach-pipi')) {
+    // Pipi opens its beak on every note, and the note's name floats up in its colour.
+    if (!motionAllowed()) return;
+    pipis.forEach((pipi) => pipi.querySelector('.pp-beak')?.animate([{ transform:'none' }, { transform:'scale(1.2, 1.7)', offset:.3 }, { transform:'none' }], { duration:260, easing:'ease-out' }));
+    const label = decorate('solfa-pop', anchor, { html:SOLFA[midi % 12], dy:-6, life:900, ...offset });
+    label?.style.setProperty('--c', pitchColor(midi));
+  }
+  function phraseChime(midi) {
+    // At the end of each phrase the score glows and a small chime answers.
+    const chord = chordFor(midi);
+    [chord.bass + 36, ...chord.pah.map((tone) => tone + 24)].forEach((tone, i) => AudioEngine.playNote(tone, { gain:0.05, dur:0.8, delay:0.12 + i * 0.07, timbre:'musicbox' }));
+    if (!motionAllowed()) return;
+    const staff = $('#song-staff');
+    staff.classList.remove('phrase-glow'); void staff.offsetWidth; staff.classList.add('phrase-glow');
+    after(900, () => staff.classList.remove('phrase-glow'));
+    FX.notes(staff.querySelector('.staff-window'), { count:3, color:pitchColor(midi) });
+  }
+  function hitDrum() {
+    if (!state || screen !== 'play' || state.lesson !== 'free' || state.paused || document.querySelector('dialog[open]')) return;
+    initAudio();
+    const big = state.drums++ % 2 === 0;
+    if (big) { AudioEngine.playDrum('kick', { gain:0.34 }); AudioEngine.playNote(36, { gain:0.08, dur:0.3, timbre:'marimba' }); }
+    else { AudioEngine.playDrum('tick', { gain:0.14 }); AudioEngine.playDrum('shaker', { gain:0.08, delay:0.02 }); }
+    const button = $('#btn-drum');
+    button.querySelector('.drum-face').textContent = big ? 'ドン' : 'カッ';
+    pop(button, { scale:big ? 1.18 : 1.1, duration:260 });
+    FX.ring(button, { size:big ? 90 : 60, color:big ? '#e8786c' : '#efb552' });
+    FX.burst(button, { count:big ? 10 : 6, speed:260, size:13, life:.6 });
+    react('hop');
+  }
+  function startEcho() {
+    // Call and response: Pipi copies the child's little phrase, a bit higher and quicker.
+    const notes = state.phrase.slice(-8);
+    state.phrase = [];
+    let when = 250;
+    state.echo = { t:0, i:0, notes:notes.map((note, i) => {
+      if (i) when += Math.max(170, Math.min(420, (note.at - notes[i - 1].at) * 0.85));
+      return { midi:note.midi, when };
+    }) };
+    $('#coach-text').textContent = 'ピピが まねっこ するよ ♪';
+  }
+  function updateEcho(dt) {
+    const echo = state.echo;
+    echo.t += dt;
+    while (echo.i < echo.notes.length && echo.t >= echo.notes[echo.i].when) {
+      const { midi } = echo.notes[echo.i++];
+      AudioEngine.playNote(midi + 12, { gain:0.18, dur:0.8, timbre:'musicbox' });
+      react('hop');
+      const pipi = $('.coach-pipi');
+      // The coach's speech bubble sits above Pipi, so the sung names rise beside it.
+      const box = pipi.getBoundingClientRect();
+      sing(midi, pipi, { dx:box.width * 0.8, dy:box.height * 0.4 });
+      FX.notes(pipi, { count:1, color:pitchColor(midi) });
+    }
+    if (echo.i >= echo.notes.length && echo.t >= echo.notes[echo.notes.length - 1].when + 500) {
+      state.echo = null;
+      $('#coach-text').textContent = 'こんどは きみの ばん！';
+    }
+  }
   function diatonic(midi) { return [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6][midi % 12] + Math.floor(midi / 12) * 7; }
   function buildStaff() {
     $('#song-staff').hidden = !state.song;
@@ -574,7 +640,7 @@
       const flag = beats === 0.5 ? `<path class="stem" d="M${x + 5.3} ${y - 26}q8 5 5 14"/>` : '';
       const dot = beats === 1.5 || beats === 3 ? `<circle class="note-dot" cx="${x + 10}" cy="${y - 1}" r="1.8"/>` : '';
       const bar = end ? `<path class="bar-line" d="M${x + STAFF_STEP / 2} 12V44"/>` : '';
-      markup += `<g class="staff-note" data-i="${i}">${ledger}${stem}${flag}<ellipse class="head${beats >= 2 ? ' hollow' : ''}" cx="${x}" cy="${y}" rx="5.8" ry="4.2" style="transform-origin:${x}px ${y}px"/>${dot}<text class="solfa" x="${x}" y="68">${SOLFA[midi % 12]}</text></g>${bar}`;
+      markup += `<g class="staff-note" data-i="${i}" style="--c:${pitchColor(midi)}">${ledger}${stem}${flag}<ellipse class="head${beats >= 2 ? ' hollow' : ''}" cx="${x}" cy="${y}" rx="5.8" ry="4.2" style="transform-origin:${x}px ${y}px"/>${dot}<text class="solfa" x="${x}" y="68">${SOLFA[midi % 12]}</text></g>${bar}`;
     });
     const svg = $('#staff-notes');
     svg.setAttribute('width', width);
@@ -647,6 +713,8 @@
       return;
     }
     initAudio();
+    state.echo = null;
+    state.quiet = 0;
     state.correct++;
     const keyIndex = ALL_KEYS.indexOf(ch) % 15;
     const note = free ? null : songNote();
@@ -654,13 +722,15 @@
     state.notes.push({ midi, at:state.elapsed, beats:note?.[1] });
     if (state.notes.length > 600) state.notes.shift();
     AudioEngine.playNote(midi, { timbre:instrument() });
-    if (!free) { accompany(midi, 0, note[1]); updateStaff(); }
+    if (!free) { accompany(midi, 0, note[1]); updateStaff(); if (note[2]) phraseChime(midi); }
+    else { state.phrase.push({ midi, at:state.elapsed }); if (state.phrase.length > 16) state.phrase.shift(); }
     flashKey(ch, midi);
     const keyEl = visibleKey(ch);
-    const tint = ['#efb552', '#e8786c', '#78af91', '#b4a4c9', '#7fb3c8'][keyIndex % 5];
-    FX.ring(keyEl, { color:free ? tint : '#efb552' });
-    FX.burst(keyEl, { count:7, speed:230, size:13, life:.7 });
-    FX.notes(free ? keyEl : $('#prompt-picture'), { count:free ? 2 : 1, color:free ? tint : undefined });
+    const tint = pitchColor(midi);
+    FX.ring(keyEl, { color:tint });
+    FX.burst(keyEl, { count:7, speed:230, size:13, life:.7, colors:[tint, tint, '#f4c96e', '#fffdf7'] });
+    FX.notes(free ? keyEl : $('#prompt-picture'), { count:free ? 2 : 1, color:tint });
+    sing(midi, keyEl);
     react('hop');
     if (!free && ++state.streak % 5 === 0) celebrateStreak(state.streak);
     if (free) {
@@ -1026,7 +1096,11 @@
         renderPrompt(); updateKeys();
       }
     }
-    if (state.phase === 'playing' && state.recovery <= 0) {
+    if (state.lesson === 'free' && state.phase === 'playing') {
+      if (state.echo) updateEcho(dt);
+      else if (state.phrase.length >= 3 && (state.quiet += dt) >= ECHO_WAIT_MS) startEcho();
+    }
+    if (state.phase === 'playing' && state.recovery <= 0 && !state.echo) {
       state.idle += dt;
       if (state.idle >= IDLE_HINT_MS) { state.idle = 0; idleHint(); }
     }
@@ -1045,6 +1119,7 @@
     if (document.querySelector('dialog[open]')) return;
     if (event.key === 'Escape' && screen === 'play') { event.preventDefault(); openDialog('pause-dialog'); return; }
     if (screen !== 'play') return;
+    if (event.code === 'Space' && state?.lesson === 'free') { event.preventDefault(); hitDrum(); return; }
     // Physical key codes also work with the Japanese IME active (key="Process").
     const ch = /^[a-z]$/i.test(event.key) ? event.key.toLowerCase() : /^Key[A-Z]$/.test(event.code) ? event.code.slice(3).toLowerCase() : null;
     if (!ch) return;
@@ -1066,6 +1141,8 @@
     AudioEngine.stopAll();
     [60, 64, 67, 72].forEach((midi, i) => AudioEngine.playNote(midi, { gain:0.2, dur:0.9, delay:i * 0.11, timbre:button.dataset.instrument }));
   }));
+  $('#btn-drum').addEventListener('pointerdown', (event) => { event.preventDefault(); hitDrum(); });
+  $('#btn-drum').addEventListener('click', (event) => { if (event.detail === 0) hitDrum(); });
   $('#btn-groove').addEventListener('click', () => {
     if (!state) return;
     state.groove = !state.groove;
@@ -1188,6 +1265,7 @@
     settings: { ...profile.settings }, storageAvailable,
     audio: AudioEngine.getStatus(),
     particles: FX.count(),
+    echo: state?.echo ? { played:state.echo.i, total:state.echo.notes.length } : null,
   });
   window.advanceTime = (ms) => {
     if (!Number.isFinite(ms) || ms < 0) return;

@@ -59,6 +59,8 @@ const AudioEngine = (() => {
     piano: { level:1, partials:[[1, 1, 'sine'], [2, 0.30, 'sine'], [3, 0.10, 'sine'], [4, 0.04, 'sine'], [1.004, 0.17, 'triangle']], attack:0.009, decay:0.22, sustain:0.24, bright:7, length:1 },
     musicbox: { level:1.45, partials:[[1, 1, 'sine'], [3.01, 0.30, 'sine'], [5.43, 0.12, 'sine'], [8.93, 0.05, 'sine']], attack:0.002, decay:0.07, sustain:0.32, bright:12, length:1.35, octave:12 },
     marimba: { level:1.7, partials:[[1, 1, 'sine'], [3.93, 0.36, 'sine'], [9.8, 0.07, 'sine']], attack:0.003, decay:0.05, sustain:0.2, bright:5, length:0.6 },
+    // A little cat voice: each note slides up into pitch and sags at the end, like "nya".
+    kitty: { level:0.95, partials:[[1, 1, 'triangle'], [2, 0.22, 'sine'], [3, 0.07, 'sine']], attack:0.025, decay:0.16, sustain:0.45, bright:5, length:0.6, glide:0.88 },
     flute: { level:0.68, partials:[[1, 1, 'sine'], [2, 0.16, 'sine'], [3, 0.05, 'triangle']], attack:0.07, decay:0.3, sustain:0.72, bright:4, length:0.9, vibrato:5.2 },
   };
   function track(nodes, sources) {
@@ -106,6 +108,11 @@ const AudioEngine = (() => {
       const partial = ctx.createGain();
       osc.type = type;
       osc.frequency.value = f * mult;
+      if (tone.glide) {
+        osc.frequency.setValueAtTime(f * mult * tone.glide, t);
+        osc.frequency.exponentialRampToValueAtTime(f * mult, t + 0.07);
+        osc.frequency.exponentialRampToValueAtTime(f * mult * 0.95, t + length);
+      }
       if (lfoGain) lfoGain.connect(osc.frequency);
       partial.gain.value = weight;
       osc.connect(partial);

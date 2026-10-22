@@ -447,7 +447,7 @@ try {
         });
         check(silence, 'Muted piano renders exact silence');
         const sounds = {};
-        for (const name of ['piano', 'musicbox', 'marimba', 'flute', 'kick', 'tick', 'shaker']) {
+        for (const name of ['piano', 'musicbox', 'marimba', 'flute', 'kitty', 'kick', 'tick', 'shaker']) {
           await page.reload();
           sounds[name] = await page.evaluate(async (name) => {
             const offline = new OfflineAudioContext(1, 48000 * 3, 48000);
