@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TYPE SONATA — 指で奏でる英単語</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Italiana&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Courier+Prime:wght@400;700&family=Shippori+Mincho:wght@500;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="grain" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<!-- ═══════════════ TITLE ═══════════════ -->
+<section id="screen-title" class="screen active">
+  <div class="title-notes" aria-hidden="true">
+    <span>♪</span><span>♫</span><span>♩</span><span>♪</span><span>♬</span><span>♩</span><span>♫</span>
+  </div>
+  <div class="title-inner">
+    <p class="title-over">— every keystroke is a note —</p>
+    <h1 class="title-main">TYPE<span class="amp">♪</span>SONATA</h1>
+    <p class="title-sub">指で奏でる、英単語。</p>
+    <div class="title-rule" aria-hidden="true"><i>♩ = 120</i></div>
+
+    <div class="level-select">
+      <button class="level-btn" data-level="easy">
+        <span class="mvt">I.</span>
+        <span class="lv-name">初級</span>
+        <span class="lv-tempo">Andante</span>
+        <span class="lv-desc">みじかい単語で、ゆったりと</span>
+      </button>
+      <button class="level-btn" data-level="normal">
+        <span class="mvt">II.</span>
+        <span class="lv-name">中級</span>
+        <span class="lv-tempo">Moderato</span>
+        <span class="lv-desc">日常の単語を、よどみなく</span>
+      </button>
+      <button class="level-btn" data-level="hard">
+        <span class="mvt">III.</span>
+        <span class="lv-name">上級</span>
+        <span class="lv-tempo">Allegro</span>
+        <span class="lv-desc">長い単語を、情熱的に</span>
+      </button>
+    </div>
+
+    <div class="how-to">
+      <p>単語は、まず<b>日本語の意味だけ</b>が示されます。<br>
+      英語を思い出してタイプしきれば <b>Memoria!</b> ボーナス。<br>
+      数秒待つか打ち間違えると、スペルが現れて写し打ちできます。<span class="mobile-note">スマホは画面下の鍵盤キーをタップ。</span><br>
+      正しい一打ごとにピアノが鳴り、打ちそこねた単語は ♪ をひとつ失って終演後の<b>復習リスト</b>へ。</p>
+      <p class="shortcut-note">全12語の楽章。Escで休止、Shift+Fで全画面。</p>
+      <p><a href="index.html" style="color:var(--gold-soft)">♪ ちいさな おんがくしつへ</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ GAME ═══════════════ -->
+<section id="screen-game" class="screen">
+  <header class="hud">
+    <div class="hud-item"><span class="hud-label">Score</span><span class="hud-value" id="hud-score">0</span></div>
+    <div class="hud-item"><span class="hud-label">Combo</span><span class="hud-value" id="hud-combo">0</span></div>
+    <div class="hud-item"><span class="hud-label">正確率</span><span class="hud-value" id="hud-acc">100%</span></div>
+    <div class="hud-item"><span class="hud-label">WPM</span><span class="hud-value" id="hud-wpm">0</span></div>
+    <div class="hud-progress" aria-label="楽章の進行度">
+      <span class="hud-label">Movement</span>
+      <span class="hud-progress-value" id="hud-progress">0 / 12</span>
+      <span class="hud-progress-track"><i id="hud-progress-bar"></i></span>
+    </div>
+    <div class="hud-lives" id="hud-lives" aria-label="残りライフ"></div>
+    <button id="btn-pause" title="演奏を休止する">Ⅱ 休止</button>
+    <button id="btn-quit" title="演奏をやめる">𝄂 終演</button>
+  </header>
+
+  <div class="stage">
+    <div class="stage-overlay" id="stage-overlay" aria-live="polite">
+      <p class="overlay-over" id="overlay-over">I. Andante</p>
+      <strong id="overlay-title">3</strong>
+      <span id="overlay-hint">姿勢を整えて</span>
+    </div>
+
+    <div class="staff" id="staff">
+      <div class="staff-lines" aria-hidden="true"></div>
+      <div class="clef" aria-hidden="true">𝄞</div>
+      <div class="hit-line" aria-hidden="true"><span class="hit-diamond"></span></div>
+      <div class="judgement" id="judgement"></div>
+    </div>
+
+    <div class="word-panel">
+      <div class="big-word" id="big-word"><span class="placeholder">♪ 単語を待っています…</span></div>
+      <div class="word-meaning" id="word-meaning">&nbsp;</div>
+      <div class="reveal-gauge" id="reveal-gauge"><i></i></div>
+    </div>
+
+    <div class="piano" id="piano" aria-hidden="true"></div>
+
+    <div class="kbd-guide" id="kbd-guide" aria-hidden="true"></div>
+  </div>
+</section>
+
+<!-- ═══════════════ RESULT ═══════════════ -->
+<section id="screen-result" class="screen">
+  <div class="result-inner">
+    <p class="result-over">𝄂 fine</p>
+    <h2 class="result-title">演奏終了</h2>
+    <p class="result-rank" id="result-rank"></p>
+
+    <div class="result-stats">
+      <div class="rs"><span class="rs-label">Score</span><span class="rs-value" id="rs-score">0</span></div>
+      <div class="rs"><span class="rs-label">最大コンボ</span><span class="rs-value" id="rs-combo">0</span></div>
+      <div class="rs"><span class="rs-label">正確率</span><span class="rs-value" id="rs-acc">0%</span></div>
+      <div class="rs"><span class="rs-label">WPM</span><span class="rs-value" id="rs-wpm">0</span></div>
+      <div class="rs"><span class="rs-label">演奏した単語</span><span class="rs-value" id="rs-words">0</span></div>
+    </div>
+
+    <div class="review" id="review-box">
+      <h3 class="review-title">復習リスト <small>— 打ちそこねた単語 —</small></h3>
+      <ul class="review-list" id="review-list"></ul>
+    </div>
+
+    <div class="result-actions">
+      <button id="btn-retry" class="ghost-btn">da capo — もう一度</button>
+      <button id="btn-title" class="ghost-btn">タイトルへ</button>
+    </div>
+  </div>
+</section>
+
+<script src="js/words.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>

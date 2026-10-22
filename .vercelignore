@@ -1,0 +1,8 @@
+node_modules
+output
+tests
+.playwright-mcp
+progress.md
+package-lock.json
+.DS_Store
+package.json

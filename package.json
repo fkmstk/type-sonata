@@ -1,0 +1,14 @@
+{
+  "name": "type-sonata",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A gentle music and typing room for little musicians.",
+  "scripts": {
+    "start": "python3 -m http.server 8123 --bind 127.0.0.1",
+    "check": "node --check js/fx.js && node --check js/play.js && node --check js/audio.js && node --check js/game.js",
+    "test": "node tests/verify.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.59.1"
+  }
+}

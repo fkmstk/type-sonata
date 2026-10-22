@@ -10,6 +10,9 @@
 
   const FAIL_X = 20;   // ここを過ぎたらミス(演奏ラインの位置はCSSから取得)
   const MAX_LIVES = 5;
+  const RECITAL_WORDS = 12;
+  const COUNT_IN_MS = 2400;
+  const MISTAKE_RECOVERY_MS = 850; // ミスタッチ後、答えを見て立て直すための間
 
   // ── DOM ──
   const screens = {
@@ -24,9 +27,17 @@
   const gaugeEl = $("#reveal-gauge");
   const gaugeBarEl = $("#reveal-gauge i");
   const judgementEl = $("#judgement");
+  const wordPanelEl = $(".word-panel");
+  const stageEl = $(".stage");
+  const overlayEl = $("#stage-overlay");
+  const overlayOverEl = $("#overlay-over");
+  const overlayTitleEl = $("#overlay-title");
+  const overlayHintEl = $("#overlay-hint");
+  const pauseBtn = $("#btn-pause");
   const hud = {
     score: $("#hud-score"), combo: $("#hud-combo"),
     acc: $("#hud-acc"), wpm: $("#hud-wpm"), lives: $("#hud-lives"),
+    progress: $("#hud-progress"), progressBar: $("#hud-progress-bar"),
   };
 
   // ── state ──
@@ -50,9 +61,17 @@
       combo: 0, maxCombo: 0,
       typedOk: 0, typedNg: 0,
       wordsDone: 0,
+      totalWords: Math.min(RECITAL_WORDS, pool.length),
+      spawnedWords: 0,
+      resolvedWords: 0,
       lives: MAX_LIVES,
       missed: [],           // 復習リスト
       startedAt: 0,
+      elapsedMs: 0,
+      inputLockedUntil: 0,
+      countdownMs: COUNT_IN_MS,
+      paused: false,
+      endReason: null,
       playing: false,
       glyphAlt: 0,
     };
@@ -155,6 +174,7 @@
   const GLYPHS = ["♪", "♩", "♫", "♬"];
   function spawnWord() {
     const st = state;
+    if (st.spawnedWords >= st.totalWords) return;
     if (st.qi >= st.queue.length) { shuffle(st.queue); st.qi = 0; }
     const [en, ja] = st.queue[st.qi++];
     const { triad, seq } = Melody.nextWordChord();
@@ -185,6 +205,7 @@
     };
     el.style.transform = `translate(${word.x}px, calc(-50% + var(--lane)))`;
     st.words.push(word);
+    st.spawnedWords++;
     refreshTarget();
   }
 
@@ -195,7 +216,7 @@
     state.words.forEach((w, i) => w.el.classList.toggle("target", i === 0));
     const t = target();
     if (t) {
-      if (!t.revealed && !t.revealAt) t.revealAt = performance.now() + t.revealMs;
+      if (!t.revealed && !t.revealAt) t.revealAt = state.elapsedMs + t.revealMs;
       renderBigWord(t);
       meaningEl.textContent = t.ja;
       // 伏せている間は答えになるキーを光らせない(思い出すのが練習)
@@ -245,9 +266,20 @@
 
   // ── input ──
   function onKeyDown(e) {
-    if (!state || !state.playing) return;
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.metaKey || e.ctrlKey || e.altKey || e.repeat || e.isComposing) return;
     const ch = e.key.toLowerCase();
+    if (ch === "f" && e.shiftKey && screens.game.classList.contains("active")) {
+      e.preventDefault();
+      toggleFullscreen();
+      return;
+    }
+    if (!state || !state.playing) return;
+    if ((ch === "p" && e.shiftKey) || (e.key === "Escape" && !document.fullscreenElement)) {
+      e.preventDefault();
+      togglePause();
+      return;
+    }
+    if (state.paused || state.countdownMs > 0) return;
     if (!/^[a-z]$/.test(ch)) return;
     e.preventDefault();
     handleChar(ch);
@@ -257,6 +289,9 @@
   function handleChar(ch) {
     const t = target();
     if (!t) return;
+    if (state.paused || state.countdownMs > 0) return;
+    // ミス直後の連打抜けを防ぎ、開示されたスペルを認識する時間を作る
+    if (state.elapsedMs < state.inputLockedUntil) return;
 
     if (ch === t.en[t.typed]) {
       // 正打:旋律を一音進める(伏せ字でも正しく打てた文字は姿を現す)
@@ -287,6 +322,9 @@
       state.combo = 0;
       state.score = Math.max(0, state.score - 5);
       revealWord(t);
+      state.inputLockedUntil = state.elapsedMs + MISTAKE_RECOVERY_MS;
+      wordPanelEl.classList.add("recovering");
+      setNextKey(null);
       t.el.classList.remove("shake");
       void t.el.offsetWidth;
       t.el.classList.add("shake");
@@ -297,6 +335,7 @@
   function completeWord(w) {
     const st = state;
     st.wordsDone++;
+    st.resolvedWords++;
 
     // タイミング評価:演奏ライン付近で完成できたか
     const center = w.x + w.width / 2;
@@ -329,12 +368,14 @@
     st.spawnGap = Math.max(1.1, st.spawnGap * st.lv.gapDecay);
 
     refreshTarget();
+    finishRecitalIfReady();
   }
 
   function missWord(w) {
     const st = state;
     st.combo = 0;
     st.lives--;
+    st.resolvedWords++;
     st.missed.push([w.en, w.ja]);
     AudioEngine.playMiss();
     judge("miss…", "miss");
@@ -346,7 +387,13 @@
     renderLives();
     updateHud();
 
-    if (st.lives <= 0) endGame();
+    if (st.lives <= 0) endGame("lives");
+    else finishRecitalIfReady();
+  }
+
+  function finishRecitalIfReady() {
+    if (state.resolvedWords < state.totalWords) return;
+    endGame("complete");
   }
 
   // ── HUD ──
@@ -366,7 +413,7 @@
   }
 
   function wpm() {
-    const mins = (performance.now() - state.startedAt) / 60000;
+    const mins = state.elapsedMs / 60000;
     return mins <= 0 ? 0 : Math.round(state.typedOk / 5 / mins);
   }
 
@@ -375,20 +422,80 @@
     hud.combo.textContent = state.combo;
     hud.acc.textContent = accuracy() + "%";
     hud.wpm.textContent = wpm();
+    hud.progress.textContent = `${state.resolvedWords} / ${state.totalWords}`;
+    hud.progressBar.style.width = `${state.resolvedWords / state.totalWords * 100}%`;
+  }
+
+  function updateStageOverlay() {
+    if (state.paused) {
+      overlayOverEl.textContent = "intermezzo";
+      overlayTitleEl.textContent = "休止中";
+      overlayHintEl.textContent = "Esc またはボタンで演奏に戻る";
+      overlayEl.hidden = false;
+      stageEl.classList.add("paused");
+      return;
+    }
+
+    stageEl.classList.remove("paused");
+    if (state.countdownMs > 0) {
+      const movement = { easy: "I. Andante", normal: "II. Moderato", hard: "III. Allegro" };
+      overlayOverEl.textContent = movement[state.levelKey];
+      overlayTitleEl.textContent = Math.max(1, Math.ceil(state.countdownMs / 800));
+      overlayHintEl.textContent = "姿勢を整えて";
+      overlayEl.hidden = false;
+      return;
+    }
+    overlayEl.hidden = true;
+  }
+
+  function togglePause() {
+    if (!state || !state.playing || state.countdownMs > 0) return;
+    state.paused = !state.paused;
+    pauseBtn.textContent = state.paused ? "▶ 再開" : "Ⅱ 休止";
+    pauseBtn.setAttribute("aria-pressed", String(state.paused));
+    const t = target();
+    setNextKey(state.paused ? null : (t?.revealed ? t.en[t.typed] : null));
+    updateStageOverlay();
+  }
+
+  function toggleFullscreen() {
+    const operation = document.fullscreenElement
+      ? document.exitFullscreen?.()
+      : document.documentElement.requestFullscreen?.();
+    operation?.catch(() => {});
   }
 
   // ── main loop ──
-  function loop(now) {
+  function updateGame(dt) {
     if (!state || !state.playing) return;
-    const dt = Math.min((now - lastTime) / 1000, 0.05);
-    lastTime = now;
+    if (state.paused) return;
+
+    if (state.countdownMs > 0) {
+      state.countdownMs = Math.max(0, state.countdownMs - dt * 1000);
+      updateStageOverlay();
+      if (state.countdownMs === 0) {
+        state.spawnTimer = 0.1;
+        state.elapsedMs = 0;
+        AudioEngine.playChord([48, 55, 64, 72], 0.25);
+      }
+      return;
+    }
+
+    state.elapsedMs += dt * 1000;
+
+    if (state.inputLockedUntil && state.elapsedMs >= state.inputLockedUntil) {
+      state.inputLockedUntil = 0;
+      wordPanelEl.classList.remove("recovering");
+      const t = target();
+      setNextKey(t && t.revealed ? t.en[t.typed] : null);
+    }
 
     // spawn
     state.spawnTimer -= dt;
     const lastWord = state.words[state.words.length - 1];
     const staffW = staffEl.clientWidth;
     const roomOk = !lastWord || lastWord.x + lastWord.width < staffW - 60;
-    if (state.spawnTimer <= 0 && roomOk) {
+    if (state.spawnedWords < state.totalWords && state.spawnTimer <= 0 && roomOk) {
       spawnWord();
       state.spawnTimer = state.spawnGap;
     }
@@ -403,7 +510,7 @@
     // リコール締切り:時間切れでスペルを開示、残り時間はゲージに表示
     const t0 = target();
     if (t0 && !t0.revealed && t0.revealAt) {
-      const rem = t0.revealAt - performance.now();
+      const rem = t0.revealAt - state.elapsedMs;
       if (rem <= 0) {
         revealWord(t0);
         gaugeEl.classList.remove("on");
@@ -418,6 +525,13 @@
     // miss 判定(先頭のみ処理すれば十分:先頭が最も左にいる)
     const t = target();
     if (t && t.x < FAIL_X) missWord(t);
+  }
+
+  function loop(now) {
+    if (!state || !state.playing) return;
+    const dt = Math.min((now - lastTime) / 1000, 0.05);
+    lastTime = now;
+    updateGame(dt);
 
     if (state && state.playing) {
       updateHud();
@@ -430,6 +544,9 @@
     AudioEngine.init();
     Melody.reset();
     state = newState(levelKey);
+    wordPanelEl.classList.remove("recovering");
+    pauseBtn.textContent = "Ⅱ 休止";
+    pauseBtn.setAttribute("aria-pressed", "false");
     staffEl.querySelectorAll(".note-word").forEach((el) => el.remove());
     renderLives();
     updateHud();
@@ -437,29 +554,36 @@
     showScreen("game");
     state.playing = true;
     state.startedAt = performance.now();
+    updateStageOverlay();
     lastTime = performance.now();
     rafId = requestAnimationFrame(loop);
-    // 開幕の一音
-    AudioEngine.playChord([48, 55, 64, 72], 0.25);
   }
 
-  function endGame() {
+  function endGame(reason = "quit") {
     state.playing = false;
+    state.endReason = reason;
     cancelAnimationFrame(rafId);
+    overlayEl.hidden = true;
+    stageEl.classList.remove("paused");
 
     $("#rs-score").textContent = state.score.toLocaleString();
     $("#rs-combo").textContent = state.maxCombo;
     $("#rs-acc").textContent = accuracy() + "%";
     $("#rs-wpm").textContent = wpm();
-    $("#rs-words").textContent = state.wordsDone;
+    $("#rs-words").textContent = `${state.resolvedWords} / ${state.totalWords}`;
     $("#result-rank").textContent = rankFor();
 
     const box = $("#review-box");
     const list = $("#review-list");
     list.innerHTML = "";
-    if (state.missed.length === 0) {
+    if (state.missed.length === 0 && reason === "complete") {
       box.classList.add("empty");
-      list.innerHTML = `<li class="perfect-run">ノーミス!すべての単語を演奏しきりました 🎩</li>`;
+      list.innerHTML = state.typedNg === 0
+        ? `<li class="perfect-run">ノーミス!すべての単語を演奏しきりました 🎩</li>`
+        : `<li class="perfect-run">全単語完奏!すべての単語を演奏しきりました 🎩</li>`;
+    } else if (state.missed.length === 0) {
+      box.classList.add("empty");
+      list.innerHTML = `<li class="perfect-run">演奏を途中で終えました。次は終楽章まで。</li>`;
     } else {
       box.classList.remove("empty");
       // 重複を除いて表示
@@ -476,6 +600,8 @@
   }
 
   function rankFor() {
+    if (state.endReason === "quit") return "演奏を中断 — Intermezzo";
+    if (state.endReason === "lives") return "もう一度、最初から — Rehearsal";
     const a = accuracy(), w = wpm();
     if (a >= 97 && w >= 40) return "維持されるべき栄誉 — Maestro";
     if (a >= 92) return "見事な演奏 — Virtuoso";
@@ -487,10 +613,48 @@
   document.querySelectorAll(".level-btn").forEach((btn) => {
     btn.addEventListener("click", () => startGame(btn.dataset.level));
   });
-  $("#btn-quit").addEventListener("click", () => endGame());
+  pauseBtn.addEventListener("click", () => togglePause());
+  $("#btn-quit").addEventListener("click", () => endGame("quit"));
   $("#btn-retry").addEventListener("click", () => startGame(state.levelKey));
   $("#btn-title").addEventListener("click", () => showScreen("title"));
   window.addEventListener("keydown", onKeyDown);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden && state?.playing && !state.paused && state.countdownMs <= 0) togglePause();
+  });
+
+  // 自動テストとアクセシビリティ用の簡潔なゲーム状態
+  window.render_game_to_text = () => {
+    if (!state || screens.title.classList.contains("active")) return JSON.stringify({ mode: "title" });
+    const t = target();
+    return JSON.stringify({
+      mode: screens.result.classList.contains("active")
+        ? "result"
+        : state.paused
+          ? "paused"
+          : state.countdownMs > 0
+            ? "countdown"
+            : state.playing ? "playing" : "idle",
+      coordinates: "staff origin is top-left; x increases right, words move left",
+      level: state.levelKey,
+      target: t ? { word: t.en, meaning: t.ja, typed: t.typed, x: Math.round(t.x), revealed: t.revealed } : null,
+      queuedWords: state.words.slice(1).map((w) => ({ x: Math.round(w.x), letters: w.en.length })),
+      mistakeRecoveryMs: Math.max(0, Math.ceil(state.inputLockedUntil - state.elapsedMs)),
+      progress: { resolved: state.resolvedWords, spawned: state.spawnedWords, total: state.totalWords },
+      score: state.score,
+      combo: state.combo,
+      accuracy: accuracy(),
+      lives: state.lives,
+    });
+  };
+
+  window.advanceTime = (ms) => {
+    if (!state || !state.playing) return;
+    const steps = Math.max(1, Math.round(ms / (1000 / 60)));
+    const dt = ms / steps / 1000;
+    for (let i = 0; i < steps && state.playing; i++) updateGame(dt);
+    lastTime = performance.now();
+    updateHud();
+  };
 
   buildPiano();
   buildKeyboard();

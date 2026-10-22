@@ -1,120 +1,148 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>TYPE SONATA — 指で奏でる英単語</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Italiana&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Courier+Prime:wght@400;700&family=Shippori+Mincho:wght@500;600;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#faf7ee">
+  <meta name="description" content="ひかるキーをぽんっ。ピアノの音と、ひらがなと、かわいいシール。じぶんのペースであそべる、はじめてのタイピング。">
+  <title>TYPE SONATA — ちいさな おんがくしつ</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/play.css">
 </head>
 <body>
-
-<div class="grain" aria-hidden="true"></div>
-<div class="vignette" aria-hidden="true"></div>
-
-<!-- ═══════════════ TITLE ═══════════════ -->
-<section id="screen-title" class="screen active">
-  <div class="title-notes" aria-hidden="true">
-    <span>♪</span><span>♫</span><span>♩</span><span>♪</span><span>♬</span><span>♩</span><span>♫</span>
-  </div>
-  <div class="title-inner">
-    <p class="title-over">— every keystroke is a note —</p>
-    <h1 class="title-main">TYPE<span class="amp">♪</span>SONATA</h1>
-    <p class="title-sub">指で奏でる、英単語。</p>
-    <div class="title-rule" aria-hidden="true"><i>♩ = 120</i></div>
-
-    <div class="level-select">
-      <button class="level-btn" data-level="easy">
-        <span class="mvt">I.</span>
-        <span class="lv-name">初級</span>
-        <span class="lv-tempo">Andante</span>
-        <span class="lv-desc">みじかい単語で、ゆったりと</span>
+  <a class="skip-link" href="#main">あそぶ ところへ</a>
+  <div class="app-shell">
+    <header class="site-header">
+      <button id="brand-home" class="brand" aria-label="はじめの がめんへ">
+        <span class="brand-mark"><svg aria-hidden="true"><use href="assets/art.svg#note"/></svg></span>
+        <span><b>TYPE SONATA<span class="brand-dot">.</span></b><small>ちいさな おんがくしつ</small></span>
       </button>
-      <button class="level-btn" data-level="normal">
-        <span class="mvt">II.</span>
-        <span class="lv-name">中級</span>
-        <span class="lv-tempo">Moderato</span>
-        <span class="lv-desc">日常の単語を、よどみなく</span>
-      </button>
-      <button class="level-btn" data-level="hard">
-        <span class="mvt">III.</span>
-        <span class="lv-name">上級</span>
-        <span class="lv-tempo">Allegro</span>
-        <span class="lv-desc">長い単語を、情熱的に</span>
-      </button>
-    </div>
+      <div class="header-actions">
+        <button id="btn-collection" class="collection-button" aria-label="シールちょうを ひらく"><svg aria-hidden="true"><use href="assets/art.svg#star"/></svg><span>シールちょう <b id="collection-count">0 / 16</b></span></button>
+        <button id="btn-sound" class="round-button sound-button" aria-label="おとを けす" aria-pressed="true"><span class="sound-icon" aria-hidden="true">♫</span><span class="sound-label">おと</span></button>
+        <button id="btn-settings" class="round-button" aria-label="おうちのかたへ・せってい"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16M8 4v6m8 4v6"/></svg></button>
+      </div>
+    </header>
+    <main id="main" tabindex="-1">
+      <section id="screen-home" class="screen" aria-labelledby="home-title">
+        <div class="hero">
+          <div class="hero-copy">
+            <p class="eyebrow"><span aria-hidden="true">✦</span> はじめての タイピング</p>
+            <h1 id="home-title">ぽんっと おして、<br><span>おとと あそぼう。</span></h1>
+            <p class="hero-description">ひかる キーを おすと、ピアノが うたうよ。<br>きみの ペースで、ひとつずつ。</p>
+            <button id="btn-start" class="primary-button start-button"><span class="play-triangle" aria-hidden="true"></span>あそびに いく <span aria-hidden="true">→</span></button>
+            <p class="start-caption"><span class="tiny-check" aria-hidden="true">✓</span> まちがえても だいじょうぶ。じかんせいげん なし。</p>
+          </div>
+          <div class="hero-art" aria-hidden="true">
+            <div class="pipi-bubble">いっしょに あそぼ！<span>ピピ より</span></div>
+            <svg viewBox="0 0 560 410" class="garden-scene"><use href="assets/art.svg#scene"/></svg>
+            <span class="hero-note n1">♪</span><span class="hero-note n2">♫</span><span class="hero-note n3">♩</span><span class="hero-note n4">♪</span>
+            <span class="art-caption">a little key, a little melody</span>
+          </div>
+        </div>
+        <section class="lesson-section" aria-labelledby="lesson-heading">
+          <div class="section-heading"><h2 id="lesson-heading">きょうは なにして あそぶ？</h2><span>すきな あそびを えらんでね</span></div>
+          <div class="lesson-grid" role="group" aria-label="あそびを えらぶ">
+            <button class="lesson-card selected" data-lesson="letters" aria-pressed="true">
+              <span class="lesson-icon letter-icon" aria-hidden="true">A<span>♪</span></span>
+              <span class="lesson-copy"><span class="lesson-tag">まずは ここから</span><b>1もじ ぽんっ</b><small>おなじ もじを みつけよう</small></span><span class="selection-check" aria-hidden="true">✓</span>
+            </button>
+            <button class="lesson-card" data-lesson="words" aria-pressed="false">
+              <span class="lesson-icon cat-icon"><svg aria-hidden="true"><use href="assets/art.svg#cat"/></svg></span>
+              <span class="lesson-copy"><span class="lesson-tag">ちょっと できたら</span><b>ことば ぽんぽん</b><small>えを みながら、ABC</small></span><span class="selection-check" aria-hidden="true">✓</span>
+            </button>
+            <button class="lesson-card" data-lesson="free" aria-pressed="false">
+              <span class="lesson-icon piano-icon"><svg aria-hidden="true"><use href="assets/art.svg#piano"/></svg></span>
+              <span class="lesson-copy"><span class="lesson-tag">すきな おとで</span><b>じゆうに ピアノ</b><small>どの キーでも おんがくに</small></span><span class="selection-check" aria-hidden="true">✓</span>
+            </button>
+          </div>
+        </section>
+        <section id="song-section" class="song-section" aria-labelledby="song-heading">
+          <h2 id="song-heading"><span aria-hidden="true">♫</span> どの きょくを ひく？</h2>
+          <div class="song-chips" role="group" aria-label="きょくを えらぶ">
+            <button class="song-chip" data-song="twinkle" aria-pressed="true"><span aria-hidden="true">☆</span>きらきらぼし<span class="chip-progress" aria-hidden="true"><i></i></span></button>
+            <button class="song-chip" data-song="frog" aria-pressed="false"><span aria-hidden="true">♪</span>かえるのうた<span class="chip-progress" aria-hidden="true"><i></i></span></button>
+            <button class="song-chip" data-song="mary" aria-pressed="false"><span aria-hidden="true">♡</span>メリーさんの ひつじ<span class="chip-progress" aria-hidden="true"><i></i></span></button>
+            <button class="song-chip" data-song="london" aria-pressed="false"><span aria-hidden="true">⌒</span>ロンドンばし<span class="chip-progress" aria-hidden="true"><i></i></span></button>
+          </div>
+          <p class="song-caption">キーを おすたびに、きょくが ひとつずつ すすむよ。さいごまで ひけるかな？</p>
+        </section>
+        <section class="instrument-section" aria-labelledby="instrument-heading">
+          <h2 id="instrument-heading"><span aria-hidden="true">♩</span> どの がっきで ひく？</h2>
+          <div class="instrument-chips" role="group" aria-label="がっきを えらぶ">
+            <button class="instrument-chip" data-instrument="piano" aria-pressed="true"><svg class="inst-icon" aria-hidden="true"><use href="assets/art.svg#piano"/></svg>ピアノ</button>
+            <button class="instrument-chip" data-instrument="musicbox" aria-pressed="false"><svg class="inst-icon" aria-hidden="true"><use href="assets/art.svg#gift"/></svg>オルゴール</button>
+            <button class="instrument-chip" data-instrument="marimba" aria-pressed="false"><svg class="inst-icon" aria-hidden="true"><use href="assets/art.svg#marimba"/></svg>もっきん</button>
+            <button class="instrument-chip" data-instrument="flute" aria-pressed="false"><svg class="inst-icon" aria-hidden="true"><use href="assets/art.svg#flute"/></svg>ふえ</button>
+          </div>
+        </section>
+        <div class="home-bottom"><p><span aria-hidden="true">⌨</span> キーボードでも、がめんを タッチしても あそべるよ。</p><button id="btn-how" class="text-button">あそびかた <span aria-hidden="true">↗</span></button></div>
+      </section>
 
-    <div class="how-to">
-      <p>単語は、まず<b>日本語の意味だけ</b>が示されます。<br>
-      英語を思い出してタイプしきれば <b>Memoria!</b> ボーナス。<br>
-      数秒待つか打ち間違えると、スペルが現れて写し打ちできます。<span class="mobile-note">スマホは画面下の鍵盤キーをタップ。</span><br>
-      正しい一打ごとにピアノが鳴り、打ちそこねた単語は ♪ をひとつ失って終演後の<b>復習リスト</b>へ。</p>
-    </div>
+      <section id="screen-play" class="screen" hidden aria-labelledby="play-title">
+        <div class="play-topline">
+          <div class="play-heading"><span class="mini-note" aria-hidden="true">♪</span><div><p id="play-overline">ひとつずつ、じぶんの ペースで</p><h1 id="play-title">1もじ ぽんっ</h1><span id="play-song" class="play-song"><span aria-hidden="true">♫</span> <span id="play-song-name">きらきらぼし</span><span class="song-meter" aria-hidden="true"><i id="song-meter-fill"></i></span></span></div></div>
+          <div class="journey" id="journey" aria-label="できた かず"><div id="journey-dots" class="journey-dots"></div><span id="journey-label">0 / 6</span></div>
+          <button id="btn-pause" class="soft-button"><span aria-hidden="true">Ⅱ</span> ひとやすみ</button>
+        </div>
+        <div class="play-stage">
+          <div class="stave-decoration" aria-hidden="true"><span>𝄞</span></div>
+          <div class="coach"><svg class="coach-pipi pipi" data-pipi aria-hidden="true"></svg><div class="coach-bubble"><p id="coach-text" role="status" aria-live="polite">ひかる キーを おしてね</p></div></div>
+          <div class="prompt-card" id="prompt-card">
+            <span class="prompt-tag" id="prompt-tag">おなじ もじを みつけよう</span>
+            <div class="prompt-content"><svg id="prompt-picture" class="prompt-picture" aria-hidden="true"><use href="assets/art.svg#star"/></svg><div><div id="prompt-letters" class="prompt-letters"></div><p id="prompt-meaning" class="prompt-meaning"></p></div></div>
+            <div class="prompt-footer"><span id="prompt-hint">ひかる キーを ぽんっ！</span><span id="word-progress" aria-label="もじの すすみぐあい"></span></div>
+          </div>
+        </div>
+        <div class="keyboard-area">
+          <div class="keyboard-heading"><p id="keyboard-hint"><span class="key-dot" aria-hidden="true"></span><span id="keyboard-hint-text">ひかる キーが つぎの おと</span></p><button id="btn-keyboard" class="text-button">ぜんぶの キーを みる</button><span class="keyboard-device">キーボードでも タッチでも OK</span></div>
+          <div id="touch-choices" class="touch-choices" aria-label="もじの ボタン"></div>
+          <div id="keyboard" class="keyboard" aria-label="がめん キーボード"></div>
+          <div class="piano-strip" id="piano-strip" aria-hidden="true"></div>
+          <div id="song-staff" class="song-staff" hidden aria-hidden="true"><span class="staff-clef">𝄞</span><div class="staff-window"><svg id="staff-notes" class="staff-notes"></svg></div></div>
+        </div>
+        <div class="play-bottom"><p id="play-reassurance">ゆっくりで だいじょうぶ。ピピも まってるよ。</p><button id="btn-groove" class="groove-button" hidden aria-pressed="true"><span class="groove-dot" aria-hidden="true"></span><span id="groove-label">リズム ON</span></button><button id="btn-free-finish" class="soft-button" hidden>おしまい <span aria-hidden="true">→</span></button></div>
+      </section>
+
+      <section id="screen-result" class="screen result-screen" hidden aria-labelledby="result-title">
+        <p class="eyebrow">♪ きみだけの おんがくが できたね ♪</p>
+        <h1 id="result-title" tabindex="-1">やったね！ ぜんぶ できた！</h1>
+        <p id="result-description" class="result-description"></p>
+        <div class="reward-scene"><svg class="result-pipi pipi" data-pipi aria-hidden="true"></svg><div class="reward-sticker" id="reward-sticker"><svg id="reward-art" aria-hidden="true"><use href="assets/art.svg#star"/></svg><span class="sticker-shine" aria-hidden="true"></span></div><span class="reward-spark spark-one" aria-hidden="true">✧</span><span class="reward-spark spark-two" aria-hidden="true">✦</span><div class="reward-label" id="reward-label">シールを もらったよ！</div></div>
+        <p id="result-finale" class="result-finale" hidden>ピピが さいごの おとを いっしょに ひいてくれたよ ♪</p>
+        <div id="result-song" class="result-song" hidden><p id="result-song-text"></p><span class="song-bar" aria-hidden="true"><i id="result-song-fill"></i></span></div>
+        <div class="result-summary"><span id="result-notes"></span><span id="result-collection"></span></div>
+        <button id="btn-listen" class="listen-button"><span aria-hidden="true">♫</span> じぶんの おとを きく</button>
+        <div class="result-actions"><button id="btn-again" class="primary-button">もういっかい <span aria-hidden="true">↻</span></button><button id="btn-result-home" class="soft-button">おうちへ <span aria-hidden="true">⌂</span></button></div>
+        <button id="btn-next-lesson" class="text-button" hidden>ことば ぽんぽんも やってみる →</button>
+      </section>
+    </main>
+    <footer class="site-footer"><span>MADE FOR LITTLE MUSICIANS</span><span class="footer-notes" aria-hidden="true">· ♪ · ♫ ·</span><span>おとから はじまる、できた！</span></footer>
   </div>
-</section>
+  <canvas id="fx-canvas" class="fx-canvas" aria-hidden="true"></canvas>
+  <p id="system-message" class="system-message" role="status" hidden></p>
 
-<!-- ═══════════════ GAME ═══════════════ -->
-<section id="screen-game" class="screen">
-  <header class="hud">
-    <div class="hud-item"><span class="hud-label">Score</span><span class="hud-value" id="hud-score">0</span></div>
-    <div class="hud-item"><span class="hud-label">Combo</span><span class="hud-value" id="hud-combo">0</span></div>
-    <div class="hud-item"><span class="hud-label">正確率</span><span class="hud-value" id="hud-acc">100%</span></div>
-    <div class="hud-item"><span class="hud-label">WPM</span><span class="hud-value" id="hud-wpm">0</span></div>
-    <div class="hud-lives" id="hud-lives" aria-label="残りライフ"></div>
-    <button id="btn-quit" title="演奏をやめる">𝄂 終演</button>
-  </header>
-
-  <div class="stage">
-    <div class="staff" id="staff">
-      <div class="staff-lines" aria-hidden="true"></div>
-      <div class="clef" aria-hidden="true">𝄞</div>
-      <div class="hit-line" aria-hidden="true"><span class="hit-diamond"></span></div>
-      <div class="judgement" id="judgement"></div>
-    </div>
-
-    <div class="word-panel">
-      <div class="big-word" id="big-word"><span class="placeholder">♪ 単語を待っています…</span></div>
-      <div class="word-meaning" id="word-meaning">&nbsp;</div>
-      <div class="reveal-gauge" id="reveal-gauge"><i></i></div>
-    </div>
-
-    <div class="piano" id="piano" aria-hidden="true"></div>
-
-    <div class="kbd-guide" id="kbd-guide" aria-hidden="true"></div>
-  </div>
-</section>
-
-<!-- ═══════════════ RESULT ═══════════════ -->
-<section id="screen-result" class="screen">
-  <div class="result-inner">
-    <p class="result-over">𝄂 fine</p>
-    <h2 class="result-title">演奏終了</h2>
-    <p class="result-rank" id="result-rank"></p>
-
-    <div class="result-stats">
-      <div class="rs"><span class="rs-label">Score</span><span class="rs-value" id="rs-score">0</span></div>
-      <div class="rs"><span class="rs-label">最大コンボ</span><span class="rs-value" id="rs-combo">0</span></div>
-      <div class="rs"><span class="rs-label">正確率</span><span class="rs-value" id="rs-acc">0%</span></div>
-      <div class="rs"><span class="rs-label">WPM</span><span class="rs-value" id="rs-wpm">0</span></div>
-      <div class="rs"><span class="rs-label">演奏した単語</span><span class="rs-value" id="rs-words">0</span></div>
-    </div>
-
-    <div class="review" id="review-box">
-      <h3 class="review-title">復習リスト <small>— 打ちそこねた単語 —</small></h3>
-      <ul class="review-list" id="review-list"></ul>
-    </div>
-
-    <div class="result-actions">
-      <button id="btn-retry" class="ghost-btn">da capo — もう一度</button>
-      <button id="btn-title" class="ghost-btn">タイトルへ</button>
-    </div>
-  </div>
-</section>
-
-<script src="js/words.js"></script>
-<script src="js/audio.js"></script>
-<script src="js/game.js"></script>
+  <dialog id="pause-dialog" class="dialog pause-dialog" aria-labelledby="pause-title">
+    <svg class="dialog-pipi pipi sleepy" data-pipi aria-hidden="true"></svg><p class="eyebrow">ちょっと きゅうけい</p><h2 id="pause-title">ひとやすみ しよう。</h2><p>つづきは ここから あそべるよ。</p><button id="btn-resume" class="primary-button">つづける <span aria-hidden="true">▶</span></button><button id="btn-leave" class="text-button">おうちへ もどる</button>
+  </dialog>
+  <dialog id="collection-dialog" class="dialog" aria-labelledby="collection-title">
+    <button class="dialog-close" data-close aria-label="とじる">×</button><p class="eyebrow">きみの おとの たからもの</p><h2 id="collection-title">シールちょう</h2><p id="collection-description">6こ できたら、シールが ひとつ！</p><div id="sticker-grid" class="sticker-grid"></div><p class="dialog-footnote">ぜんぶ あつめても、ずっと あそべるよ。</p>
+  </dialog>
+  <dialog id="how-dialog" class="dialog" aria-labelledby="how-title">
+    <button class="dialog-close" data-close aria-label="とじる">×</button><p class="eyebrow">ピピと あそぼう</p><h2 id="how-title">あそびかた</h2>
+    <ol class="how-steps"><li><span class="demo-key">A</span><div><b>ひかる もじを みつけよう</b><p>おてほんと おなじ キーを おしてね。</p></div></li><li><svg aria-hidden="true"><use href="assets/art.svg#piano"/></svg><div><b>ぽんっ！ きょくが すすむよ</b><p>おすたびに、しってる うたが ひとつずつ。</p></div></li><li><svg aria-hidden="true"><use href="assets/art.svg#star"/></svg><div><b>6こ できたら シール！</b><p>まちがえても、なんどでも できるよ。</p></div></li></ol><button class="primary-button" data-close>わかった！</button>
+  </dialog>
+  <dialog id="settings-dialog" class="dialog settings-dialog" aria-labelledby="settings-title">
+    <button class="dialog-close" data-close aria-label="とじる">×</button><p class="eyebrow">おうちの方へ</p><h2 id="settings-title">あそびの せってい</h2><p class="settings-intro">時間制限・ゲームオーバーはありません。最初は「1もじ ぽんっ」で、同じ文字を探すところから。</p>
+    <label class="setting-row" for="setting-volume"><span>音の大きさ</span><input id="setting-volume" type="range" min="0" max="100" step="5"><output id="volume-value" for="setting-volume">55%</output></label>
+    <label class="setting-row" for="setting-lowercase"><span>小文字で表示する<small>オフなら、キーボードと同じ ABC</small></span><input id="setting-lowercase" type="checkbox"></label>
+    <label class="setting-row" for="setting-motion"><span>動きを控えめにする</span><input id="setting-motion" type="checkbox"></label>
+    <p class="settings-help">日本語入力中でも英字の位置で遊べます。長押しは1回として扱います。シールと設定はこのブラウザに保存します。</p>
+    <a class="classic-link" href="concert.html">英単語を練習したい方へ：クラシックモード ↗</a>
+    <button class="soft-button" data-close>せっていを とじる</button>
+  </dialog>
+  <script src="js/audio.js"></script>
+  <script src="js/fx.js"></script>
+  <script src="js/play.js"></script>
 </body>
 </html>
